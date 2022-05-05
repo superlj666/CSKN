@@ -12,8 +12,37 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision.models import *
 import matplotlib.pyplot as plt
 import torchvision.models as models
-from models import PretrainModel
 from utils import load_resize_data
+
+
+# Reference: https://colab.research.google.com/github/kjamithash/Pytorch_DeepLearning_Experiments/blob/master/FashionMNIST_ResNet_TransferLearning.ipynb#scrollTo=m05rFpG5f5yn
+class PretrainModel(nn.Module): 
+  def __init__(self, pretrained_model='resnet', in_channels=1, num_classes=10):
+    super(PretrainModel, self).__init__()
+    if pretrained_model == 'resnet':
+        self.model = models.resnet18(pretrained=True)
+        self.model.conv1 = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        in_features = self.model.fc.in_features
+        self.model.fc = nn.Linear(in_features, num_classes)
+    elif pretrained_model == 'vgg':
+        self.model = models.vgg11(pretrained=True)
+        self.model.features[0] = nn.Conv2d(in_channels, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        in_features = self.model.classifier[-1].in_features
+        self.model.classifier[-1] = nn.Linear(in_features=in_features, out_features=num_classes, bias=True)
+    elif pretrained_model == 'densenet':
+        self.model = models.densenet121(pretrained=True)
+        self.model.features.conv0 = nn.Conv2d(in_channels, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+        self.model.classifier = nn.Linear(in_features=1024, out_features=num_classes, bias=True)
+    elif pretrained_model == 'shufflenet':
+        self.model = models.shufflenet_v2_x0_5(pretrained=True)
+        self.model.conv1[0] = nn.Conv2d(in_channels, 24, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+        self.model.fc = nn.Linear(in_features=1024, out_features=num_classes, bias=True)
+    # mobilenet_v3_small = models.mobilenet_v3_small(pretrained=True)
+    # efficientnet_b0 = models.efficientnet_b0(pretrained=True)
+    print(pretrained_model)
+
+  def forward(self, x):
+    return self.model(x)
 
 def pretrained_train(logger, args, model, device, criterion, train_loader, optimizer, epoch=5):
     model.train()
@@ -47,6 +76,7 @@ def pretrained_inference(logger, args, model, device, criterion, test_loader):
     logger.info('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(test_loss, correct, len(test_loader.dataset), accuracy))
 
     return accuracy, test_loss
+
 
 torch.manual_seed(1)
 logging.basicConfig(level=logging.INFO)
