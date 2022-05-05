@@ -14,8 +14,8 @@ def load_data(dataset_name, batch_size = 128, data_dir = './data', kwargs={'num_
         test_loader = torch.utils.data.DataLoader(datasets.MNIST(data_dir, train=False, transform=transforms_mnist), batch_size=1000, shuffle=True, **kwargs)
     elif dataset_name == 'FashionMNIST':
         transform_fashionmnist = transforms.Compose([transforms.ToTensor(),transforms.Normalize((0.1307,), (0.3081,))])
-        train_loader = torch.utils.data.DataLoader(datasets.FashionMNIST('./fashionmnist_data/', train=True, download=True, transform=transform_fashionmnist), batch_size=batch_size, shuffle=True, **kwargs)
-        test_loader = torch.utils.data.DataLoader(datasets.FashionMNIST('./fashionmnist_data/', train=False, transform=transform_fashionmnist), batch_size=1000, shuffle=False, **kwargs)
+        train_loader = torch.utils.data.DataLoader(datasets.FashionMNIST(os.path.join(data_dir, './fashionmnist_data/'), train=True, download=True, transform=transform_fashionmnist), batch_size=batch_size, shuffle=True, **kwargs)
+        test_loader = torch.utils.data.DataLoader(datasets.FashionMNIST(os.path.join(data_dir, './fashionmnist_data/'), train=False, transform=transform_fashionmnist), batch_size=1000, shuffle=False, **kwargs)
     elif dataset_name == 'CIFAR10':
         transform_train = transforms.Compose([transforms.RandomCrop(32, padding=4), transforms.RandomHorizontalFlip(), transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
         transform_test = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
