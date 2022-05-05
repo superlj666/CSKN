@@ -1,0 +1,8 @@
+.history/
+cifar10_pytorch/
+data/
+fashionmnist_data/
+mnist-pytorch/
+results/
+waste/
+__pycache__/
