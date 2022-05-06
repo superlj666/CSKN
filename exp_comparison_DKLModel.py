@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 import math
 import logging
+import torch.nn.functional as F
 from distutils.util import strtobool
 from torch.optim.lr_scheduler import MultiStepLR
 import numpy as np
@@ -15,8 +16,30 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision.models import *
 import gpytorch
 import tqdm
-from utils import load_data
+from models import CRFFNet8
+from densenet import DenseNet
+from utils import load_resize_data
 
+class DenseNetFeatureExtractor(DenseNet):
+    # def __init__(self):
+    #     super(DenseNetFeatureExtractor, self).__init__()
+    #     self.features
+    def forward(self, x):
+        features = self.features(x)
+        out = F.relu(features, inplace=True)
+        out = F.avg_pool2d(out, kernel_size=self.avgpool_size).view(features.size(0), -1)
+        return out
+
+class FeatureExtractor(CRFFNet8):
+    def forward(self, x):
+        for i in range(len(self.op_list)):
+            x =  torch.cos(self.op_list[i](x))
+            x = self.bn_list[i](x)
+            if i in self.pool_dict:
+                x = self.max_pool(x)
+        x = self.avg_pool(x)
+        feature_mapping = torch.flatten(x, 1) 
+        return feature_mapping
 
 class GaussianProcessLayer(gpytorch.models.ApproximateGP):
     def __init__(self, num_dim, grid_bounds=(-10., 10.), grid_size=64):
@@ -68,7 +91,7 @@ class DKLModel(gpytorch.Module):
         return res
 
 
-def train(logger, args, model, device, mll, train_loader, optimizer, epoch):
+def train(logger, args, model, likelihood, device, mll, train_loader, optimizer, epoch):
     model.train()
     likelihood.train()
     with gpytorch.settings.num_likelihood_samples(8):
@@ -85,7 +108,7 @@ def train(logger, args, model, device, mll, train_loader, optimizer, epoch):
                 100. * batch_idx / len(train_loader), loss.item()))
     return loss.item()
 
-def test(logger, args, model, device, mll, test_loader):
+def test(logger, args, model, likelihood, device, mll, test_loader):
     model.eval()
     likelihood.eval()
 
@@ -96,6 +119,7 @@ def test(logger, args, model, device, mll, test_loader):
             data, target = data.to(device), target.to(device)
             output = model(data)
             test_loss += (-mll(output, target).item())
+            output = likelihood(output)
             pred = output.probs.mean(0).argmax(-1)  # Taking the mean over all of the sample we've drawn
             correct += pred.eq(target.view_as(pred)).cpu().sum()
 
@@ -108,68 +132,89 @@ torch.manual_seed(1)
 logging.basicConfig(level=logging.INFO)
 kwargs = {'num_workers': 1, 'pin_memory': True}
 
-args={'log_interval': 1000}
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", type=str, default = 'CIFAR10', help='Specific dataset')
-    parser.add_argument("--repeate", type=int, default = 10, help='the number of repeates')
+    parser.add_argument("--dataset", type=str, default = 'MNIST', help='Specific dataset')
     parser.add_argument("--epochs", type=int, default = 30, help='the number of epochs')
+    parser.add_argument("--repeates", type=int, default = 10, help='the number of repeates')
     parser.add_argument("--gpu", type=int, default = 1, help='GPU numer')
     param = parser.parse_args()
     print(param)
 
-    num_repeate = param.repeate
+    dataset_name = param.dataset
     num_epoch = param.epochs
+    num_repeate = param.repeates
     loss_arr = np.zeros((num_repeate, num_epoch))
     test_acc_arr = np.zeros((num_repeate, num_epoch))
     test_loss_arr = np.zeros((num_repeate, num_epoch))
     training_time_arr = np.zeros((num_repeate, num_epoch))
 
     device = torch.device("cuda:{}".format(param.gpu) if torch.cuda.is_available() else "cpu")
-    writer = SummaryWriter('./results/exp3_{}_DKL'.format(param.dataset))
-    logger = logging.getLogger('exp3_{}_DKL'.format(param.dataset))
+    writer = SummaryWriter('./results/logs/exp_comparison_{}_DKL_E{}_R{}'.format(dataset_name, num_epoch, num_repeate))
+    logger = logging.getLogger('exp_comparison_{}_DKL_E{}_R{}'.format(dataset_name, num_epoch, num_repeate))
 
-    if param.dataset == 'MNIST':
+    if dataset_name == 'MNIST':
+        num_dimension = 512
         num_classes = 10
         in_channels = 1
-        num_data = 60000
-    elif param.dataset == 'FashionMNIST':
         num_classes = 10
-        num_dimension = 784
-    elif param.dataset == 'CIFAR10':
+        num_data = 60000
+        sigma0 = 1e-7
+    elif dataset_name == 'FashionMNIST':
+        num_dimension = 512
+        num_classes = 10
+        in_channels = 1
+        num_classes = 10
+        num_data = 60000
+        sigma0 = 1e-5
+    elif dataset_name == 'CIFAR10':
+        num_dimension = 2048
         num_classes = 10
         in_channels = 3
-        num_data = 60000
-    elif param.dataset == 'CIFAR100':
         num_classes = 10
-        num_dimension = 784
-    elif param.dataset == 'TinyImagenet':
-        num_classes = 10
-        num_dimension = 784
-
-    feature_extractor = DenseNetFeatureExtractor(block_config=(6, 6, 6), num_classes=num_classes)
-    model = DKLModel(feature_extractor, num_dim=1000).to(device)
-    likelihood = gpytorch.likelihoods.SoftmaxLikelihood(num_features=model.num_dim, num_classes=num_classes).to(device)
-
-    lr = 0.1
-    optimizer = SGD([
-        {'params': model.feature_extractor.parameters(), 'weight_decay': 1e-4},
-        {'params': model.gp_layer.hyperparameters(), 'lr': lr * 0.01},
-        {'params': model.gp_layer.variational_parameters()},
-        {'params': likelihood.parameters()},
-    ], lr=lr, momentum=0.9, nesterov=True, weight_decay=0)
-    scheduler = MultiStepLR(optimizer, milestones=[0.5 * num_epoch, 0.75 * num_epoch], gamma=0.1)
-    mll = gpytorch.mlls.VariationalELBO(likelihood, model.gp_layer, num_data=num_data)
+        num_data = 50000
+        sigma0 = 1e-4
+    elif dataset_name == 'CIFAR100':
+        num_dimension = 2048
+        num_classes = 100
+        in_channels = 3
+        num_classes = 100
+        num_data = 50000
+        sigma0 = 1e-6
+    elif dataset_name == 'TinyImagenet':
+        num_dimension = 8192
+        num_classes = 200
+        in_channels = 3
+        num_classes = 200
+        num_data = 100000
+        sigma0 = 1e-7    
+    args={'log_interval': 1000}
 
     for idx_repeat in range(num_repeate):
-        train_loader, test_loader = load_data(param.dataset)
+        # feature_extractor = FeatureExtractor(num_dimension, num_classes, in_channels, sigma0)
+        feature_extractor = DenseNetFeatureExtractor(in_channels=in_channels, block_config=(6, 6, 6), num_classes=num_classes)
+        num_features = feature_extractor.classifier.in_features
+        model = DKLModel(feature_extractor, num_dim=num_features).to(device)
+        likelihood = gpytorch.likelihoods.SoftmaxLikelihood(num_features=model.num_dim, num_classes=num_classes).to(device)
+
+        lr = 0.1
+        optimizer = SGD([
+            {'params': model.feature_extractor.parameters(), 'weight_decay': 1e-4},
+            {'params': model.gp_layer.hyperparameters(), 'lr': lr * 0.01},
+            {'params': model.gp_layer.variational_parameters()},
+            {'params': likelihood.parameters()},
+        ], lr=lr, momentum=0.9, nesterov=True, weight_decay=0)
+        scheduler = MultiStepLR(optimizer, milestones=[0.5 * num_epoch, 0.75 * num_epoch], gamma=0.1)
+        mll = gpytorch.mlls.VariationalELBO(likelihood, model.gp_layer, num_data=num_data)
+
+        train_loader, test_loader = load_resize_data(dataset_name)
 
         for epoch in range(num_epoch):
             start = time.time()
-            train_loss = train(logger, args, model, device, mll, train_loader, optimizer, epoch)
+            train_loss = train(logger, args, model, likelihood, device, mll, train_loader, optimizer, epoch)
             end = time.time()
 
-            test_acc, test_loss = test(logger, args, model, device, mll, test_loader)
+            test_acc, test_loss = test(logger, args, model, likelihood, device, mll, test_loader)
 
             loss_arr[idx_repeat, epoch] = train_loss
             test_acc_arr[idx_repeat, epoch] = test_acc
@@ -186,4 +231,4 @@ if __name__ == '__main__':
     checkpoint = {'loss_arr': loss_arr, 'test_acc_arr': test_acc_arr, 'test_loss_arr': test_loss_arr, 'training_time_arr': training_time_arr}
     print('Mean test accuracy {:.2f} %'.format(test_acc_arr.mean(0)[-1]))
     
-    torch.save(checkpoint, './results/exp3_{}_{}.pt'.format(param.dataset, param.model))
+    torch.save(checkpoint, './results/exp_comparison_{}_DKL_E{}_R{}.pt'.format(dataset_name, num_epoch, num_repeate))
