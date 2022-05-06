@@ -21,13 +21,10 @@ from densenet import DenseNet
 from utils import load_resize_data
 
 class DenseNetFeatureExtractor(DenseNet):
-    # def __init__(self):
-    #     super(DenseNetFeatureExtractor, self).__init__()
-    #     self.features
     def forward(self, x):
         features = self.features(x)
         out = F.relu(features, inplace=True)
-        out = F.avg_pool2d(out, kernel_size=self.avgpool_size).view(features.size(0), -1)
+        out = F.adaptive_avg_pool2d(out, output_size=(1, 1)).view(features.size(0), -1)
         return out
 
 class FeatureExtractor(CRFFNet8):
@@ -69,7 +66,6 @@ class GaussianProcessLayer(gpytorch.models.ApproximateGP):
         mean = self.mean_module(x)
         covar = self.covar_module(x)
         return gpytorch.distributions.MultivariateNormal(mean, covar)
-
 
 class DKLModel(gpytorch.Module):
     def __init__(self, feature_extractor, num_dim, grid_bounds=(-10., 10.)):
@@ -157,35 +153,30 @@ if __name__ == '__main__':
         num_dimension = 512
         num_classes = 10
         in_channels = 1
-        num_classes = 10
         num_data = 60000
         sigma0 = 1e-7
     elif dataset_name == 'FashionMNIST':
         num_dimension = 512
         num_classes = 10
         in_channels = 1
-        num_classes = 10
         num_data = 60000
         sigma0 = 1e-5
     elif dataset_name == 'CIFAR10':
         num_dimension = 2048
         num_classes = 10
         in_channels = 3
-        num_classes = 10
         num_data = 50000
         sigma0 = 1e-4
     elif dataset_name == 'CIFAR100':
         num_dimension = 2048
         num_classes = 100
         in_channels = 3
-        num_classes = 100
         num_data = 50000
         sigma0 = 1e-6
     elif dataset_name == 'TinyImagenet':
         num_dimension = 8192
         num_classes = 200
         in_channels = 3
-        num_classes = 200
         num_data = 100000
         sigma0 = 1e-7    
     args={'log_interval': 1000}

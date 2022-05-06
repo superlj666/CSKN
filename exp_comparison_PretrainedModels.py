@@ -84,7 +84,7 @@ kwargs = {'num_workers': 1, 'pin_memory': True}
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default = 'shufflenet', help='Specific model')
+    parser.add_argument("--model", type=str, default = 'densenet', help='Specific model')
     parser.add_argument("--dataset", type=str, default = 'MNIST', help='Specific dataset')
     parser.add_argument("--repeates", type=int, default = 1, help='the number of repeates')
     parser.add_argument("--epochs", type=int, default = 30, help='the number of epochs')
