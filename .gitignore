@@ -4,6 +4,10 @@ data/
 fashionmnist_data/
 mnist-pytorch/
 results/
+results_bak/
 waste/
+figures/
 __pycache__/
 PIICM-main/
+outputs/
+tools/

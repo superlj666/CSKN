@@ -110,11 +110,9 @@ if __name__ == '__main__':
     for idx_repeat in range(num_repeate):
         train_loader, test_loader = load_resize_data(dataset_name)
 
-        if dataset_name == 'MNIST':
+        if dataset_name == 'MNIST' or dataset_name == 'FashionMNIST':
             model = PretrainModel(model_name, 1, 10).to(device=device)
-        elif dataset_name == 'FashionMNIST':
-            model = PretrainModel(model_name, 1, 10).to(device=device)
-        elif dataset_name == 'CIFAR10':
+        elif dataset_name == 'CIFAR10' or dataset_name == 'SVHN':
             model = PretrainModel(model_name, 3, 10).to(device=device)
         elif dataset_name == 'CIFAR100':
             model = PretrainModel(model_name, 3, 100).to(device=device)
@@ -144,4 +142,4 @@ if __name__ == '__main__':
     checkpoint = {'loss_arr': loss_arr, 'test_acc_arr': test_acc_arr, 'test_loss_arr': test_loss_arr, 'training_time_arr': training_time_arr}
     print('Mean test accuracy {:.2f} %'.format(test_acc_arr.mean(0)[-1]))
     
-    torch.save(checkpoint, './results/exp_comparison_{}_{}_E{}_R{}'.format(dataset_name, model_name, num_epoch, num_repeate))
+    torch.save(checkpoint, './results/exp_comparison_{}_{}_E{}_R{}.pt'.format(dataset_name, model_name, num_epoch, num_repeate))

@@ -6,6 +6,7 @@ https://github.com/pytorch/examples/blob/master/mnist/main.py
 """
 
 import os
+import sys
 import argparse
 import logging
 import nni
@@ -16,10 +17,11 @@ import torch.optim as optim
 from nni.utils import merge_parameter
 from torchvision import datasets, transforms
 from yaml import load
-from models import VanillaCNNNet, DNN, DSKN, CSKN, CSKN8
+from torch.utils.tensorboard import SummaryWriter
+# sys.path.append("..")
+from models import CSKN8
 from models import train, test
 from utils import load_data
-from torch.utils.tensorboard import SummaryWriter
 
 logger = logging.getLogger('Tune_CSKN8')
 
@@ -42,6 +44,10 @@ def main(args):
     elif args['dataset'] == 'FashionMNIST': # CUpHeqkW, 1e-6, 1e-5 
         train_loader, test_loader = load_data('FashionMNIST')
         model = CSKN8(512, 10, 1, sigma0, sigma1, growth_factor).to(device)
+
+    elif args['dataset'] == 'SVHN': # CUpHeqkW, 1e-6, 1e-5 
+        train_loader, test_loader = load_data('SVHN')        
+        model = CSKN8(2048, 10, 3, sigma0, sigma1, growth_factor).to(device)
 
     elif args['dataset'] == 'CIFAR10': # mLfxNZFM, 1e-6, 1e-6
         train_loader, test_loader = load_data('CIFAR10')
@@ -88,7 +94,7 @@ def get_params():
     parser.add_argument("--growth_factor", type=float, default=4, help="growth factor for kernel parameters")
     parser.add_argument("--lambda_0", type=float, default=1e-5, help="regularization parameter0")
     parser.add_argument("--lambda_1", type=float, default=1e-4, help="regularization parameter1")
-    parser.add_argument("--dataset", type=str, default='TinyImagenet', help="the used dataset")
+    parser.add_argument("--dataset", type=str, default='SVHN', help="the used dataset")
     args, _ = parser.parse_known_args()
     return args
 

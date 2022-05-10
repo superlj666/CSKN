@@ -21,7 +21,7 @@ kwargs = {'num_workers': 1, 'pin_memory': True}
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default = 'CRFFNet8', help='Specific model')
-    parser.add_argument("--dataset", type=str, default = 'TinyImagenet', help='Specific dataset')
+    parser.add_argument("--dataset", type=str, default = 'SVHN', help='Specific dataset')
     parser.add_argument("--epochs", type=int, default = 30, help='the number of epochs')
     parser.add_argument("--repeates", type=int, default = 10, help='the number of repeates')
     parser.add_argument("--gpu", type=int, default = 1, help='GPU numer')
@@ -63,6 +63,16 @@ if __name__ == '__main__':
         sigma1 = 1e-5
         growth_factor = 4
         args={'lambda_0': 1e-6, 'lambda_1': 1e-5, 'log_interval': 1000}
+    elif dataset_name == 'SVHN':
+        num_dimension = 2048
+        num_classes = 10
+        in_channels = 3
+        lr0 = 1e-4
+        lr1 = 1e-6
+        sigma0 = 1e-7
+        sigma1 = 1e-7
+        growth_factor = 4
+        args={'lambda_0': 1e-6, 'lambda_1': 1e-6, 'log_interval': 1000}
     elif dataset_name == 'CIFAR10':
         num_dimension = 2048
         num_classes = 10

@@ -161,6 +161,12 @@ if __name__ == '__main__':
         in_channels = 1
         num_data = 60000
         sigma0 = 1e-5
+    elif dataset_name == 'SVHN':
+        num_dimension = 2048
+        num_classes = 10
+        in_channels = 3
+        num_data = 50000
+        sigma0 = 1e-4
     elif dataset_name == 'CIFAR10':
         num_dimension = 2048
         num_classes = 10
