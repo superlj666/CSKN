@@ -1,7 +1,7 @@
 ## Convolutional Spectral Kernel Learning with Generalization Guarantees
 
 ## Intro
-This repository provides the code used to run the experiments of the paper "Convolutional Spectral Kernel Learning with Generalization Guarantees".
+This repository provides the code to conduct the experiments of the paper "Convolutional Spectral Kernel Learning with Generalization Guarantees".
 ## Environments
 - Python 3.7.4
 - Pytorch 1.10.0
@@ -64,4 +64,4 @@ python3 exp_comparison_PretrainedModels.py --model shufflenet --dataset $dataset
 1. Install NNI
 `pip install nni`
 2. Modify the running script `tune_model.py` and the configuration file `tune_config.yml`.
-3. Tune hyparameters vi NNI `nnictl create --config ./tune_config.yml` and visit `127.0.0.1:8080` to review resuls.
+3. Tune hyparameters vi NNI `nnictl create --config ./tune_config.yml` and visit `127.0.0.1:8080` to view resuls.
