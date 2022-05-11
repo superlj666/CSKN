@@ -30,7 +30,7 @@ def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     kwargs = {'num_workers': 1, 'pin_memory': True}
 
-    additional_regularizers = False
+    additional_regularizers = True
     lr0 = args['lr0']
     lr1 = args['lr1']
     sigma0 = args['kernel_par1']
@@ -45,7 +45,7 @@ def main(args):
         train_loader, test_loader = load_data('FashionMNIST')
         model = CSKN8(512, 10, 1, sigma0, sigma1, growth_factor).to(device)
 
-    elif args['dataset'] == 'SVHN': # CUpHeqkW, 1e-6, 1e-5 
+    elif args['dataset'] == 'SVHN': # yKVXxYDd, 1e-7, 1e-6
         train_loader, test_loader = load_data('SVHN')        
         model = CSKN8(2048, 10, 3, sigma0, sigma1, growth_factor).to(device)
 
@@ -93,7 +93,7 @@ def get_params():
     parser.add_argument("--kernel_par1", type=float, default=0.000001, help="kernel hyperparameter1")
     parser.add_argument("--growth_factor", type=float, default=4, help="growth factor for kernel parameters")
     parser.add_argument("--lambda_0", type=float, default=1e-5, help="regularization parameter0")
-    parser.add_argument("--lambda_1", type=float, default=1e-4, help="regularization parameter1")
+    parser.add_argument("--lambda_1", type=float, default=1e-7, help="regularization parameter1")
     parser.add_argument("--dataset", type=str, default='SVHN', help="the used dataset")
     args, _ = parser.parse_known_args()
     return args

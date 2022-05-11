@@ -69,10 +69,10 @@ if __name__ == '__main__':
         in_channels = 3
         lr0 = 1e-4
         lr1 = 1e-6
-        sigma0 = 1e-7
-        sigma1 = 1e-7
-        growth_factor = 4
-        args={'lambda_0': 1e-6, 'lambda_1': 1e-6, 'log_interval': 1000}
+        sigma0 = 1e-5
+        sigma1 = 1e-5
+        growth_factor = 3
+        args={'lambda_0': 1e-5, 'lambda_1': 1e-6, 'log_interval': 1000}
     elif dataset_name == 'CIFAR10':
         num_dimension = 2048
         num_classes = 10
@@ -103,6 +103,13 @@ if __name__ == '__main__':
         sigma1 = 1e-7
         growth_factor = 5
         args={'lambda_0': 1e-5, 'lambda_1': 1e-7, 'log_interval': 1000}
+        # lr0 = 1e-4
+        # lr1 = 1e-4
+        # sigma0 = 1e-7
+        # sigma1 = 1e-7
+        # growth_factor = 5
+        # args={'lambda_0': 1e-5, 'lambda_1': 1e-7, 'log_interval': 1000}
+
 
     criterion = nn.CrossEntropyLoss()
     for idx_repeat in range(num_repeate):
