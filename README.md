@@ -16,12 +16,13 @@ This repository provides the code used to run the experiments of the paper "Conv
 - `exp_ablation0_*.py`, `exp_ablation1_layers.py`, `exp_ablation2_regularizers.py`, and `exp_ablation3_convolutional.py` are used to explore the effects of non-stationary spectral kernels, the depth of network, additional regularizers, and convolutional filters on the MNIST dataset, respectively.
 - `exp_comparison_CSKN.py` trains `CSKN8` and `CRFFNet8` on large image datasets, while `exp_comparison_DKLModel.py` and `exp_comparison_PretrainedModels.py` implement and train DKL and popular CNN networks, respectively. 
 - `ipy_exp_ablation.ipynb` and `ipy_exp_comparison.ipynb` load and illustrate ablation and comparison experimental results, respectively.
-- `tools` folder is used to tune hyperparameters vi [NNI](https://github.com/microsoft/nni) and estimating the spectral density.
+- `tune_model.py` and `tune_config.yml` are is used to tune hyperparameters vi [NNI](https://github.com/microsoft/nni).
 `data` folder stores all datasets, including `MNIST, FashionMNIST, CIFAR10, CIFAR100`, and `TinyImagenet`.
 `results` folder records experimental results and `figures` folder stores pdf files for illustrating experimental results.
 
 ## Experiments
-1. Run the following scripts for ablation expriments
+### Ablation experiments
+1. Run the following scripts for ablation experiments
 ```
 python3 exp_ablation0_RFFNet.py
 python3 exp_ablation0_DSKN.py
@@ -35,25 +36,32 @@ python3 exp_ablation3_convolutional.py --kernel_size 3
 python3 exp_ablation3_convolutional.py --kernel_size 5
 python3 exp_ablation3_convolutional.py --kernel_size 7
 ```
-and then run codes in `ipy_exp_ablation.ipynb` to illstrate experimental results.
+2. Run codes in `ipy_exp_ablation.ipynb` to illstrate experimental results.
 
-2. Download [`TinyImagenet` dataset](http://cs231n.stanford.edu/tiny-imagenet-200.zip ) into `data` folder and process it by `tinyimagenet_preprocess.py`. 
-The other datasets can be downloaded automatically when they are used for the first time.
+### Comparison experiments
+1. Download [`TinyImagenet` dataset](http://cs231n.stanford.edu/tiny-imagenet-200.zip ) into `data` folder and process it by `tinyimagenet_preprocess.py`. 
+The other datasets `MNIST, FashionMNIST, CIFAR10, CIFAR100` can be downloaded automatically when they are used for the first time.
 
-3. Run comparison expriments on datatsets `MNIST, FashionMNIST, CIFAR10, CIFAR100, TinyImagenet` for `CSKN8` and `CRFFNet8`
+2. Conduct experiments for `CSKN8` and `CRFFNet8` on each dataset
 ```
 python3 exp_comparison_CSKN.py --model CSKN8 --dataset $dataset_name --epochs 300 --repeates 1
 python3 exp_comparison_CSKN.py --model CRFFNet8 --dataset $dataset_name --epochs 300 --repeates 1
 ```
-for `DKL` models
+3. Conduct experiments for `DKL` models on each dataset
 ```
 python3 exp_comparison_DKLModel.py --dataset $dataset_name --epochs 300 --repeates 1
 ```
-and for popular CNN models `resnet, vgg, densenet, shufflenet`
+4. Conduct experiments for popular CNN models `resnet, vgg, densenet, shufflenet` on each dataset 
 ```
 python3 exp_comparison_PretrainedModels.py --model resnet --dataset $dataset_name --epochs 300 --repeates 1
 python3 exp_comparison_PretrainedModels.py --model vgg --dataset $dataset_name --epochs 300 --repeates 1
 python3 exp_comparison_PretrainedModels.py --model densenet --dataset $dataset_name --epochs 300 --repeates 1
 python3 exp_comparison_PretrainedModels.py --model shufflenet --dataset $dataset_name --epochs 300 --repeates 1
 ```
-Run ipy_exp_comparison.ipynb to draw figures
+5. Run ipy_exp_comparison.ipynb to demenstrate experimental results.
+
+### (Optimal) Tune Hyperparameters
+1. Install NNI
+`pip install nni`
+2. Modify the running script `tune_model.py` and the configuration file `tune_config.yml`.
+3. Tune hyparameters vi NNI `nnictl create --config ./tune_config.yml` and visit `127.0.0.1:8080` to review resuls.
